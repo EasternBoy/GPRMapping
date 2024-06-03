@@ -4,19 +4,28 @@ import torch
 import gpytorch
 import numpy as np
 
-def update(robo, model):
-   N = len(robo)
+def update(robo, model, llh):
+    N = len(robo)
+
+    x_min = robo[0].pBnd.x_min
+    x_max = robo[0].pBnd.x_max
+    for i in range(N):
+        model[i].eval()
+        llh[i].eval()
+        with torch.no_grad(), gpytorch.settings.fast_computations(log_prob=False, covar_root_decomposition=False):
+            point =  torch.tensor([[random.uniform(x_min, x_max), random.uniform(x_min, x_max)]])
+            llh[i](model[i](point))
    
-   neighbors = mRobot.find_nears(robo)
+    neighbors = mRobot.find_nears(robo)
    
-   for i in range(N):
-       neighbors[i].append(i)
-       for j in neighbors[i]:
-            npos = torch.tensor([robo[j].cpos], dtype=torch.double)
-            nmea = robo[j].cmea
-            model[j].get_fantasy_model(npos, nmea)
-   
-   return 0
+    for i in range(N):
+        neighbors[i].append(i)
+        for j in neighbors[i]:
+                npos = torch.tensor([robo[j].cpos], dtype=torch.double)
+                nmea = robo[j].cmea
+                model[j].get_fantasy_model(npos, nmea)
+    
+    return 0
 
 def rand_position(robo):
     x_min = robo[0].pBnd.x_min
