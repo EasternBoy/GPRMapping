@@ -4,6 +4,7 @@ import mGP
 import mComputing
 
 import torch
+import random
 import gpytorch
 import pandas as pd
 # import matplotlib as mpl
@@ -13,7 +14,7 @@ from matplotlib.colors import LogNorm
 import time
 
 
-N  = 10; T = 1.0; H = 3; L = 40; MAX_ITER = 100
+N  = 6; T = 1.0; H = 3; L = 40; MAX_ITER = 100
 x_min =  0.; x_max = 200.
 y_min =  0.; y_max = 200.
 s_max = 10.; R = 40.; r = 3.
@@ -58,21 +59,21 @@ for i in range(N):
     arrMod.append(model)   
    
     
-for i in range(N):
-    arrLlh[i].eval()
-    arrMod[i].eval()
-    with torch.no_grad(), gpytorch.settings.fast_computations(log_prob=False, covar_root_decomposition=False):
-        point =  torch.tensor([[100,100]])
-        predictions = arrLlh[i](arrMod[i](point))
+# for i in range(N):
+#     arrLlh[i].eval()
+#     arrMod[i].eval()
+#     with torch.no_grad(), gpytorch.settings.fast_computations(log_prob=False, covar_root_decomposition=False):
+#         point =  torch.tensor([[random.uniform(x_min, x_max), random.uniform(x_min, x_max)]])
+#         predictions = arrLlh[i](arrMod[i](point))
 
 
-for i in range(2):
+for i in range(20):
     mComputing.rand_position(robo)
 
     for i in range(N):    
         robo[i].cmea = mGP.measure(GTmodel, GTlikelihood, torch.tensor([robo[i].cpos]))
         
-    mComputing.update(robo, arrMod)
+    mComputing.update(robo, arrMod, arrLlh)
     for i in range(N):
         arrMod[i].train()
         arrLlh[i].train()
@@ -96,5 +97,5 @@ extent = (xv.min(), xv.max(), yv.min(), yv.max())
 plt.clf()
 plt.imshow(mean.detach().numpy().reshape(n1, n2), extent=extent)
 plt.savefig('testplot.png')
-
 plt.show()
+
